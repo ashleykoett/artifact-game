@@ -3,13 +3,20 @@ using UnityEngine.InputSystem;
 
 public class MouseRaycast : MonoBehaviour
 {
+    [SerializeField] private SherdPositionManager sherdPositionManager;
     [SerializeField] private string tagHandle = "Draggable";
+    [SerializeField] private float snapDistance = 0.1f;
     [SerializeField] private InputAction interactAction;
 
     private GameObject _selectedObject;
+    private Vector3 _selectedSnapPosition;
     private bool _selected;
     private Vector3 _offset; 
     private float _dragDepth = 10f;
+    
+    private Vector3 _mousePos;
+    private Vector3 _mouseScreenPos;
+    private Vector3 _worldPosition;
 
     private void Start()
     {
@@ -25,32 +32,17 @@ public class MouseRaycast : MonoBehaviour
         
         if (interacting) 
         {
-            Vector3 mousePos = Mouse.current.position.ReadValue();
-            Vector3 mouseScreenPos = new Vector3(mousePos.x, mousePos.y, _dragDepth);
-            Vector3 worldPosition = Camera.main.ScreenToWorldPoint(mouseScreenPos);
+            _mousePos = Mouse.current.position.ReadValue();
+            _mouseScreenPos = new Vector3(_mousePos.x, _mousePos.y, _dragDepth);
+            _worldPosition = Camera.main.ScreenToWorldPoint(_mouseScreenPos);
             
             if (_selectedObject)
             {
-                // move selected object
-                _selectedObject.transform.position = new Vector3(worldPosition.x + _offset.x, worldPosition.y + _offset.y, _selectedObject.transform.position.z);
+                DragSherd();
             }
             else
             {
-                Ray ray = Camera.main.ScreenPointToRay(mousePos);
-                RaycastHit hit;
-            
-                if (Physics.Raycast(ray, out hit, 100f))
-                {
-                    if (hit.transform.CompareTag(tagHandle))
-                    {
-                        
-                        Debug.Log("Hit: " + hit.transform.gameObject.tag);
-                        _selectedObject = hit.transform.gameObject;
-                        
-                        // calculate mouse offset
-                        _offset  = _selectedObject.transform.position - worldPosition;
-                    }
-                }
+                OnSherdSelected();
             }
         }
         else
@@ -59,6 +51,39 @@ public class MouseRaycast : MonoBehaviour
             {
                 // drop selected object
                 _selectedObject = null;
+            }
+        }
+    }
+
+    private void DragSherd()
+    {
+        Vector3 sherdPos = new Vector3(_worldPosition.x + _offset.x, _worldPosition.y + _offset.y, _selectedObject.transform.position.z);
+   
+        // see if we're close to the snap point
+        if (Vector3.Distance(sherdPos, _selectedSnapPosition) < snapDistance)
+        {
+            _selectedObject.transform.position = _selectedSnapPosition;
+        }
+        else
+        {
+            _selectedObject.transform.position = sherdPos;
+        }
+    }
+
+    private void OnSherdSelected()
+    {
+        Ray ray = Camera.main.ScreenPointToRay(_mousePos);
+        RaycastHit hit;
+            
+        if (Physics.Raycast(ray, out hit, 100f))
+        {
+            if (hit.transform.CompareTag(tagHandle))
+            {
+                _selectedObject = hit.transform.gameObject;
+                        
+                // calculate mouse offset
+                _offset  = _selectedObject.transform.position - _worldPosition;
+                _selectedSnapPosition = sherdPositionManager.GetSherdPosition(_selectedObject);
             }
         }
     }
