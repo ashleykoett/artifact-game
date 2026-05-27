@@ -256,7 +256,7 @@ Material:
     - __dirty: 1
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
-    - _Color: {r: 0.50980395, g: 0.7793493, b: 0.8980392, a: 1}
+    - _Color: {r: 0.41985583, g: 0.73659664, b: 0.8018868, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _HalftoneColor: {r: 0, g: 0, b: 0, a: 1}
     - _HatchingColor: {r: 0.14978641, g: 0.17134759, b: 0.20754719, a: 1}

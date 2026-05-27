@@ -6,6 +6,7 @@ public class MouseRaycast : MonoBehaviour
     [SerializeField] private string tagHandle = "Draggable";
     [SerializeField] private float snapDistance = 0.1f;
     [SerializeField] private InputAction interactAction;
+    [SerializeField] private Plane workPlane;
 
     SherdGroup draggedGroup;
     private Vector3 dragOffset;
@@ -13,7 +14,8 @@ public class MouseRaycast : MonoBehaviour
     private Vector3 _selectedSnapPosition;
     private bool _selected;
     private Vector3 _offset; 
-    private float _dragDepth = 10f;
+    private float _dragDepth = 10f; // prob wont use after the refactor
+    private Plane dragPlane;
     
     private Vector3 _mousePos;
     private Vector3 _mouseScreenPos;
@@ -62,7 +64,9 @@ public class MouseRaycast : MonoBehaviour
     {
         if (_snapped) return;
         
-        draggedGroup.transform.position = _worldPosition + dragOffset;
+        draggedGroup.transform.position = new Vector3(_worldPosition.x + dragOffset.x, _worldPosition.y + dragOffset.y, draggedGroup.transform.position.z);
+        // draggedGroup.transform.position = _worldPosition + dragOffset;
+        
         while (draggedGroup.TrySnap())
         {
             _snapped = true;
@@ -73,12 +77,16 @@ public class MouseRaycast : MonoBehaviour
     {
         Ray ray = Camera.main.ScreenPointToRay(_mousePos);
         RaycastHit hit;
-            
+        
+        // Get Sherd
         if (Physics.Raycast(ray, out hit, 100f) && hit.transform.gameObject.GetComponent<Sherd>() != null)
         {
             _selectedSherd = hit.transform.gameObject.GetComponent<Sherd>();
             draggedGroup = _selectedSherd.group;
             dragOffset = draggedGroup.transform.position - _worldPosition;
+            
+            // Get Raycast Plane
+            
         }
     }
 }
