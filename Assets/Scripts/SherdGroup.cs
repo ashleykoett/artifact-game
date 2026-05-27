@@ -5,32 +5,26 @@ using UnityEngine;
 public class SherdGroup : MonoBehaviour
 {
     public List<Sherd> sherds = new();
-    public float snapDistance = 0.5f;
-
-    // Returns true if a snap occurred (so caller can re-check)
+    public float snapDistance = 0.1f;
+    
     public bool TrySnap()
     {
-        foreach (var shard in sherds)
+        foreach (var sherd in sherds)
         {
-            foreach (var rel in shard.neighbors)
+            foreach (var rel in sherd.neighbors)
             {
                 if (rel.neighbor.group == this) continue;
 
-                Vector2 myShardPos = new Vector2(shard.transform.position.x, shard.transform.position.y);
+                Vector2 mySherdPos = new Vector2(sherd.transform.position.x, sherd.transform.position.y);
                 Vector2 neighborPos = new Vector2(rel.neighbor.transform.position.x, rel.neighbor.transform.position.y);
-                Vector2 expectedNeighborPos = myShardPos + rel.offset;
+                
+                Vector2 myExpectedPosition = neighborPos - rel.offset;
 
-                if (Vector2.Distance(neighborPos, expectedNeighborPos) < snapDistance)
+                if (Vector2.Distance(mySherdPos, myExpectedPosition) < snapDistance)
                 {
-                    Vector2 correction = expectedNeighborPos - neighborPos;
-                    SherdGroup otherGroup = rel.neighbor.group;
-                    otherGroup.transform.position += new Vector3(correction.x, correction.y, 0);
-                    
-                    Debug.Log($"Sherd: {shard.name} at {myShardPos}");
-                    Debug.Log($"Expected neighbor pos: {expectedNeighborPos}");
-                    Debug.Log($"Neighbor actual pos: {neighborPos}");
-                    Debug.Log($"Correction: {correction}");
-                    MergeIn(otherGroup);
+                    Vector2 correction = myExpectedPosition - mySherdPos;
+                    transform.position += new Vector3(correction.x, correction.y, 0);
+                    MergeIn(rel.neighbor.group);
                     return true;
                 }
             }

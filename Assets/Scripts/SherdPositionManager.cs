@@ -105,8 +105,7 @@ public class SherdPositionManager : MonoBehaviour
     }
 
     private void RegisterNeighbors(Sherd a, Sherd b)
-    { 
-        Debug.Log("Register Neighbors");
+    {
         a.neighbors.Add(new NeighborRelationship {
             neighbor = b,
             offset = new Vector2(b.originalPosition.x - a.originalPosition.x,

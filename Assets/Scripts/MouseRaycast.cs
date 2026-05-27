@@ -3,7 +3,6 @@ using UnityEngine.InputSystem;
 
 public class MouseRaycast : MonoBehaviour
 {
-    [SerializeField] private SherdPositionManager sherdPositionManager;
     [SerializeField] private string tagHandle = "Draggable";
     [SerializeField] private float snapDistance = 0.1f;
     [SerializeField] private InputAction interactAction;
@@ -19,6 +18,7 @@ public class MouseRaycast : MonoBehaviour
     private Vector3 _mousePos;
     private Vector3 _mouseScreenPos;
     private Vector3 _worldPosition;
+    private bool _snapped;
 
     private void Start()
     {
@@ -53,32 +53,20 @@ public class MouseRaycast : MonoBehaviour
             {
                 // drop selected object
                 _selectedSherd = null;
+                _snapped = false;
             }
         }
     }
 
     private void DragSherd()
     {
-        /*
-        Vector3 sherdPos = new Vector3(_worldPosition.x + _offset.x, _worldPosition.y + _offset.y, _selectedSherd.transform.position.z);
-
-        // see if we're close to the snap point
-
-        if (Vector3.Distance(sherdPos, _selectedSnapPosition) < snapDistance)
-        {
-            _selectedSherd.transform.position = _selectedSnapPosition;
-        }
-        else
-        {
-            _selectedSherd.transform.position = sherdPos;
-        }
-
-
-        _selectedSherd.transform.position = sherdPos;
-        */
-        draggedGroup.transform.position = _worldPosition + dragOffset;
-        while (draggedGroup.TrySnap()) { } // keep checking until no more merges
+        if (_snapped) return;
         
+        draggedGroup.transform.position = _worldPosition + dragOffset;
+        while (draggedGroup.TrySnap())
+        {
+            _snapped = true;
+        } // keep checking until no more merges
     }
 
     private void FireRay()
@@ -91,10 +79,6 @@ public class MouseRaycast : MonoBehaviour
             _selectedSherd = hit.transform.gameObject.GetComponent<Sherd>();
             draggedGroup = _selectedSherd.group;
             dragOffset = draggedGroup.transform.position - _worldPosition;
-                    
-            // calculate mouse offset
-            // _offset  = _selectedSherd.transform.position - _worldPosition;
-            // _selectedSnapPosition = sherdPositionManager.GetSherdPosition(_selectedSherd);
         }
     }
 }
