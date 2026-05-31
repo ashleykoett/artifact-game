@@ -63,30 +63,30 @@ public class MouseRaycast : MonoBehaviour
     private void DragSherd()
     {
         if (_snapped) return;
-        
-        draggedGroup.transform.position = new Vector3(_worldPosition.x + dragOffset.x, _worldPosition.y + dragOffset.y, draggedGroup.transform.position.z);
-        // draggedGroup.transform.position = _worldPosition + dragOffset;
-        
+
+        Ray ray = Camera.main.ScreenPointToRay(_mousePos);
+
+        if (dragPlane.Raycast(ray, out float dist))
+            draggedGroup.transform.position = ray.GetPoint(dist) + dragOffset;
+
         while (draggedGroup.TrySnap())
-        {
             _snapped = true;
-        } // keep checking until no more merges
     }
 
     private void FireRay()
     {
         Ray ray = Camera.main.ScreenPointToRay(_mousePos);
-        RaycastHit hit;
-        
-        // Get Sherd
-        if (Physics.Raycast(ray, out hit, 100f) && hit.transform.gameObject.GetComponent<Sherd>() != null)
+    
+        if (Physics.Raycast(ray, out RaycastHit hit) && hit.transform.GetComponent<Sherd>() != null)
         {
-            _selectedSherd = hit.transform.gameObject.GetComponent<Sherd>();
+            _selectedSherd = hit.transform.GetComponent<Sherd>();
             draggedGroup = _selectedSherd.group;
-            dragOffset = draggedGroup.transform.position - _worldPosition;
-            
-            // Get Raycast Plane
-            
+
+            // plane at the group's position, facing the camera
+            dragPlane = new Plane(-Camera.main.transform.forward, draggedGroup.transform.position);
+
+            if (dragPlane.Raycast(ray, out float dist))
+                dragOffset = draggedGroup.transform.position - ray.GetPoint(dist);
         }
     }
 }
