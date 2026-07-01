@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-
 // Make this generic
 public class MouseRaycast : MonoBehaviour
 {
@@ -25,6 +24,21 @@ public class MouseRaycast : MonoBehaviour
     
     private Vector3 _mousePos;
     private bool _snapped;
+    private bool _disabled = false;
+
+    private void OnEnable()
+    {
+        DraggableLabel.OnUIDragStart += DisableDragging;
+        DraggableLabel.OnUIDragEnd += EnableDragging;
+    }
+    private void OnDisable()
+    {
+        DraggableLabel.OnUIDragStart -= DisableDragging;
+        DraggableLabel.OnUIDragEnd -= EnableDragging;
+    }
+
+    private void DisableDragging() => _disabled = true;
+    private void EnableDragging() => _disabled = false; 
 
     private void Start()
     {
@@ -37,6 +51,11 @@ public class MouseRaycast : MonoBehaviour
     // Z position always stays the same
     void Update()
     {
+        if (_disabled)
+        {
+            return;
+        }
+        
         bool interacting = interactAction.IsPressed();
         
         if (interacting) 
