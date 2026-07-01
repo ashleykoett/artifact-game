@@ -8,7 +8,7 @@ public class MouseRaycast : MonoBehaviour
     [SerializeField] private string tagHandle = "Draggable";
     [SerializeField] private float snapDistance = 0.1f;
     [SerializeField] private InputAction interactAction;
-    [SerializeField] private Plane workPlane;
+    [SerializeField] private BoxCollider dragBox;
 
     SherdGroup draggedGroup;
     private Vector3 dragOffset;
@@ -17,17 +17,19 @@ public class MouseRaycast : MonoBehaviour
     private Vector3 _selectedSnapPosition;
     private bool _selected;
     private Vector3 _offset; 
-    private float _dragDepth = 10f; // prob wont use after the refactor
-    private Plane dragPlane;
+    private float _dragDepth = 0f; // prob wont use after the refactor
+    private Plane _dragPlane;
+    private Bounds _dragBoxBounds;
+    private Vector3 _boundsOffset;
+    private Vector3 _boundsExtents;
     
     private Vector3 _mousePos;
-    private Vector3 _mouseScreenPos;
-    private Vector3 _worldPosition;
     private bool _snapped;
 
     private void Start()
     {
         interactAction = InputSystem.actions.FindAction("Interact");
+        _dragBoxBounds = dragBox.bounds;
     }
     
     // Mouse shoots ray looking for the tag set in the inspector
@@ -40,8 +42,6 @@ public class MouseRaycast : MonoBehaviour
         if (interacting) 
         {
             _mousePos = Mouse.current.position.ReadValue();
-            _mouseScreenPos = new Vector3(_mousePos.x, _mousePos.y, _dragDepth);
-            _worldPosition = Camera.main.ScreenToWorldPoint(_mouseScreenPos);
             
             if (_selectedObject)
             {
@@ -61,53 +61,6 @@ public class MouseRaycast : MonoBehaviour
                 _snapped = false;
             }
         }
-        
-        /*
-        if (interacting) 
-        {
-            _mousePos = Mouse.current.position.ReadValue();
-            _mouseScreenPos = new Vector3(_mousePos.x, _mousePos.y, _dragDepth);
-            _worldPosition = Camera.main.ScreenToWorldPoint(_mouseScreenPos);
-            
-            if (_selectedSherd)
-            {
-                DragSherd();
-            }
-            else
-            {
-                FireRay();
-            }
-        }
-        else
-        {
-            if (_selectedSherd)
-            {
-                // drop selected object
-                _selectedSherd = null;
-                _snapped = false;
-            }
-        }
-        */
-    }
-
-    private void DragSherd()
-    {
-        if (_snapped) return;
-
-        Ray ray = Camera.main.ScreenPointToRay(_mousePos);
-
-        if (dragPlane.Raycast(ray, out float dist))
-            draggedGroup.transform.position = ray.GetPoint(dist) + dragOffset;
-
-        while (draggedGroup.TrySnap())
-            _snapped = true;
-    }
-
-    private void DragObject()
-    {
-        Ray ray = Camera.main.ScreenPointToRay(_mousePos);
-        if (dragPlane.Raycast(ray, out float dist))
-            _selectedObject.transform.position = ray.GetPoint(dist) + dragOffset;
     }
 
     private void FireRay()
@@ -122,24 +75,15 @@ public class MouseRaycast : MonoBehaviour
             }
 
             _selectedObject = hit.transform.gameObject;
-            dragPlane = new Plane(-Camera.main.transform.forward, hit.transform.position);
+            _dragPlane = new Plane(-Camera.main.transform.forward, hit.transform.position);
 
-            if (dragPlane.Raycast(ray, out float dist))
+            if (_dragPlane.Raycast(ray, out float dist))
                 dragOffset = hit.transform.position - ray.GetPoint(dist);
+
+            Bounds cb = _selectedObject.GetComponent<Collider>().bounds;
+            _boundsOffset = cb.center - _selectedObject.transform.position;
+            _boundsExtents = cb.extents;
         }
-        
-        /*
-        if (Physics.Raycast(ray, out RaycastHit hit) && hit.transform.GetComponent<Sherd>() != null)
-        {
-            _selectedSherd = hit.transform.GetComponent<Sherd>();
-            draggedGroup = _selectedSherd.group;
-
-            // plane at the group's position, facing the camera
-            dragPlane = new Plane(-Camera.main.transform.forward, draggedGroup.transform.position);
-
-            if (dragPlane.Raycast(ray, out float dist))
-                dragOffset = draggedGroup.transform.position - ray.GetPoint(dist);
-        } */
     }
 
     private void OnSelectSherd(Ray ray, RaycastHit hit)
@@ -149,21 +93,50 @@ public class MouseRaycast : MonoBehaviour
         draggedGroup = _selectedObject.GetComponent<Sherd>().group;
 
         // plane at the group's position, facing the camera
-        dragPlane = new Plane(-Camera.main.transform.forward, draggedGroup.transform.position);
+        _dragPlane = new Plane(-Camera.main.transform.forward, draggedGroup.transform.position);
 
-        if (dragPlane.Raycast(ray, out float dist))
+        if (_dragPlane.Raycast(ray, out float dist))
             dragOffset = draggedGroup.transform.position - ray.GetPoint(dist);
+
+        Bounds b = draggedGroup.GetGroupBounds();
+        _boundsOffset = b.center - draggedGroup.transform.position;
+        _boundsExtents = b.extents;
     }
 
     private void SelectedObjectBehavior()
     {
+        Ray ray = Camera.main.ScreenPointToRay(_mousePos);
+        Vector3 pos = new Vector3();
+        
+        // Drag Sherd
         if (_selectedObject.GetComponent<Sherd>() != null)
         {
-            DragSherd();
+            if (_snapped) return;
+    
+            if (_dragPlane.Raycast(ray, out float dist))
+                pos = ray.GetPoint(dist) + dragOffset;
+            
+            draggedGroup.transform.position = ClampWithCachedBounds(pos, _boundsOffset, _boundsExtents);
+
+            while (draggedGroup.TrySnap())
+                _snapped = true;
         }
+        // Drag other object
         else
         {
-            DragObject();
+            if (_dragPlane.Raycast(ray, out float dist))
+                pos = ray.GetPoint(dist) + dragOffset;
+            
+            _selectedObject.transform.position = ClampWithCachedBounds(pos, _boundsOffset, _boundsExtents);
         }
+    }
+
+    private Vector3 ClampWithCachedBounds(Vector3 pos, Vector3 boundsOffset, Vector3 extents)
+    {
+        if (pos.x + boundsOffset.x - extents.x < _dragBoxBounds.min.x) pos.x = _dragBoxBounds.min.x - boundsOffset.x + extents.x;
+        if (pos.x + boundsOffset.x + extents.x > _dragBoxBounds.max.x) pos.x = _dragBoxBounds.max.x - boundsOffset.x - extents.x;
+        if (pos.y + boundsOffset.y - extents.y < _dragBoxBounds.min.y) pos.y = _dragBoxBounds.min.y - boundsOffset.y + extents.y;
+        if (pos.y + boundsOffset.y + extents.y > _dragBoxBounds.max.y) pos.y = _dragBoxBounds.max.y - boundsOffset.y - extents.y;
+        return pos;
     }
 }
