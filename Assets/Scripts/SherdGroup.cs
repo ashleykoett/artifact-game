@@ -6,6 +6,11 @@ public class SherdGroup : MonoBehaviour
 {
     public List<Sherd> sherds = new();
     public float snapDistance = 0.1f;
+
+    private void Awake()
+    {
+        gameObject.tag = "Draggable";
+    }
     
     public bool TrySnap()
     {
