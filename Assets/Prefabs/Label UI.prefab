@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 1904953539392007637}
   - component: {fileID: 517287570123744075}
   - component: {fileID: 248234962574399004}
+  - component: {fileID: 7357108774294388935}
   m_Layer: 5
   m_Name: Label UI
   m_TagString: Untagged
@@ -28,7 +29,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 689628407703044683}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -126,11 +127,23 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 689628407703044683}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2efde370b3cc145de9f2c513df8c013e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DraggableLabel
+--- !u!114 &7357108774294388935
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 689628407703044683}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e75773d5c14574dee956a1775ba1052f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpawnDraggableLabel
 --- !u!1 &1612861275826911334
 GameObject:
   m_ObjectHideFlags: 0

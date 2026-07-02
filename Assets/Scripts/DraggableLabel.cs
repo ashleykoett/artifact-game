@@ -1,6 +1,5 @@
 using System;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.EventSystems;
 
 
@@ -48,6 +47,6 @@ public class DraggableLabel : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         }
         
         OnUIDragEnd?.Invoke();
-        rt.position = _originalPosition;
+        DestroyImmediate(gameObject);
     }
 }
